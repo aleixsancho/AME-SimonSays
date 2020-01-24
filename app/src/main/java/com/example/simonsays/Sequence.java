@@ -4,26 +4,32 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.ParcelUuid;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 
 public class Sequence extends AppCompatActivity {
-    private Intent intent;
     private ArrayList<String> colors = new ArrayList<String>();
     private Integer score;
     private Integer count;
@@ -38,6 +44,14 @@ public class Sequence extends AppCompatActivity {
     private String playerName;
     private OutputStream outputStream;
     private InputStream inStream;
+    private Button green;
+    private Button yellow;
+    private Button red;
+    private Button blue;
+    private SharedPreferences shared;
+    private SharedPreferences.Editor sharedEditor;
+    private static ArrayList<Player> topPlayers = new ArrayList<>();
+    private Handler handler = new Handler();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -53,16 +67,18 @@ public class Sequence extends AppCompatActivity {
         title = findViewById(R.id.titleText);
         scoreText = findViewById(R.id.scoreText);
         originalColor = new String[]{"#00FF00","#FFFF00","#0000FF","#F44336"};
-        Button green = findViewById(R.id.greenBtn);
-        Button yellow = findViewById(R.id.yellowBtn);
-        Button blue = findViewById(R.id.blueBtn);
-        Button red = findViewById(R.id.redBtn);
+        green = findViewById(R.id.greenBtn);
+        yellow = findViewById(R.id.yellowBtn);
+        blue = findViewById(R.id.blueBtn);
+        red = findViewById(R.id.redBtn);
         buttonColor = new Button[]{green, yellow, blue, red};
         numberColor = new String[]{"#B9FCB9", "#F0F0B1", "#B7B7F3", "#F0A49D"};
         idColor.put("Green", 0);
         idColor.put("Yellow", 1);
         idColor.put("Blue", 2);
         idColor.put("Red", 3);
+        shared = getPreferences(MODE_PRIVATE);
+        sharedEditor = shared.edit();
 
 
         // Get count, index and color from intent
@@ -71,9 +87,39 @@ public class Sequence extends AppCompatActivity {
         colors = this.getIntent().getExtras().getStringArrayList("colors");
         playerName = this.getIntent().getExtras().getString("username", "");
 
+
+        green.setOnClickListener(new View.OnClickListener(){
+            public void onClick(View v) {
+                onCorrect("Green");
+            }
+        });
+        yellow.setOnClickListener(new View.OnClickListener(){
+            public void onClick(View v) {
+                onCorrect("Yellow");
+            }
+        });
+        blue.setOnClickListener(new View.OnClickListener(){
+            public void onClick(View v) {
+                onCorrect("Blue");
+            }
+        });
+        red.setOnClickListener(new View.OnClickListener(){
+            public void onClick(View v) {
+                onCorrect("Red");
+            }
+        });
+
+        green.setEnabled(false);
+        yellow.setEnabled(false);
+        blue.setEnabled(false);
+        red.setEnabled(false);
+
+        initGame();
+    }
+
+    public void initGame(){
         scoreText.setText(score.toString());
-        
-        Handler handler = new Handler();
+        time = 1000;
         for (final String c : colors){
             time = time + 300;
             if (count < score+1) {
@@ -81,7 +127,7 @@ public class Sequence extends AppCompatActivity {
                     @Override
                     public void run() {
                         // do something
-                        changeColor(c, Boolean.TRUE);
+                        changeColor(c, Boolean.TRUE, Boolean.TRUE);
                     }
                 }, time);
                 time = time + 300;
@@ -89,38 +135,25 @@ public class Sequence extends AppCompatActivity {
                     @Override
                     public void run() {
                         // do something
-                        changeColor(c, Boolean.FALSE);
+                        changeColor(c, Boolean.FALSE, Boolean.TRUE);
                     }
                 }, time);
                 time = time + 300;
                 if (count+1 == colors.size()) {
-                    intent = new Intent(Sequence.this, Game.class);
-                    count = 0;
-                    intent.putStringArrayListExtra("colors", colors);
-                    intent.putExtra("count", count);
-                    intent.putExtra("score", score);
-                    intent.putExtra("username", playerName);
                     handler.postDelayed(new Runnable() {
                         @Override
                         public void run() {
-                            // do something
-                            startActivity(intent);
+                            playGame();
                         }
                     }, time);
                     time = 0;
                 }
             }else{
-                intent = new Intent(Sequence.this, Game.class);
-                count = 0;
-                intent.putStringArrayListExtra("colors", colors);
-                intent.putExtra("count", count);
-                intent.putExtra("score", score);
-                intent.putExtra("username", playerName);
                 handler.postDelayed(new Runnable(){
                     @Override
                     public void run(){
                         // do something
-                        startActivity(intent);
+                        playGame();
                     }
                 }, time);
                 break;
@@ -129,10 +162,12 @@ public class Sequence extends AppCompatActivity {
         }
     }
 
-    public void changeColor (final String color, Boolean change){
-        String temp = "Simon says " + color;
-        title.setText(temp);
-        scoreText.setText(score.toString());
+    public void changeColor (final String color, Boolean change, Boolean sequencia){
+        if (sequencia) {
+            String temp = "Simon says " + color;
+            title.setText(temp);
+            scoreText.setText(score.toString());
+        }
         currentBtn = buttonColor[idColor.get(color)];
         if(change) {
             currentBtn.setBackgroundColor(Color.parseColor(numberColor[idColor.get(color)]));
@@ -145,6 +180,15 @@ public class Sequence extends AppCompatActivity {
 
         }
     }
+
+    /*public void changeColor (final String color, Boolean change){
+        currentBtn = buttonColor[idColor.get(color)];
+        if(change) {
+            currentBtn.setBackgroundColor(Color.parseColor(numberColor[idColor.get(color)]));
+        }else{
+            currentBtn.setBackgroundColor(Color.parseColor(originalColor[idColor.get(color)]));
+        }
+    }*/
 
     public void initBluetooth() throws IOException {
         BluetoothAdapter blueAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -172,5 +216,89 @@ public class Sequence extends AppCompatActivity {
     public void write(String s) throws IOException {
         outputStream.write(s.getBytes());
     }
+
+    public void playGame(){
+        green.setEnabled(true);
+        yellow.setEnabled(true);
+        blue.setEnabled(true);
+        red.setEnabled(true);
+        time = 1000;
+        count = 0;
+        Gson gson = new Gson();
+        String rankJSON = shared.getString("username", "");
+        if (rankJSON.equals("")){
+            topPlayers = new ArrayList<Player>();
+        }else{
+            topPlayers = (ArrayList<Player>) gson.fromJson(rankJSON,  new TypeToken<ArrayList<Player>>() {
+            }.getType());
+        }
+        String temp;
+        if (score+1 > count) {
+            temp = "Color: " + (count + 1);
+            title.setText(temp);
+        }
+    }
+
+    public void onCorrect(final String answer){
+        if (colors.get(count).equals(answer)){
+            changeColor(answer, Boolean.TRUE, Boolean.FALSE);
+            time = 300;
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    // do something
+                    changeColor(answer, Boolean.FALSE, Boolean.FALSE);
+                }
+            }, time);
+            if ((count+1) == colors.size()){
+                gameOver("YOU WIN!");
+            }else{
+                if (count == score){
+                    count = 0;
+                    score = score + 1;
+                    green.setEnabled(false);
+                    yellow.setEnabled(false);
+                    blue.setEnabled(false);
+                    red.setEnabled(false);
+                    initGame();
+                }else {
+                    count = count + 1;
+                    String temp = "Color: " + (count + 1);
+                    title.setText(temp);
+                }
+
+            }
+        }else{
+            gameOver("gameOver");
+        }
+    }
+
+    public void gameOver(String newTitle) {
+        Intent intent = new Intent(Sequence.this, Ranking.class);
+        topPlayers.add(new Player(playerName, score));
+        Collections.sort(topPlayers);
+        List<Player> fivePlayers = new ArrayList<>();
+
+        try {
+            fivePlayers = topPlayers.subList(0, 5);
+        }catch(Exception e){
+            fivePlayers = topPlayers;
+        }
+
+        Gson gson = new Gson();
+        String info = gson.toJson(fivePlayers);
+        sharedEditor.putString("username", info);
+        sharedEditor.commit();
+        ArrayList<String> rankingString = new ArrayList<String>();
+        for (Player o : fivePlayers) {
+            rankingString.add(o.toString());
+        }
+        intent.putStringArrayListExtra("topFive", rankingString);
+        intent.putExtra("myName", playerName);
+        intent.putExtra("myScore", score);
+        startActivity(intent);
+    }
+
+
 
 }
