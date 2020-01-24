@@ -3,6 +3,7 @@ package com.example.simonsays;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -26,12 +27,20 @@ public class Ranking extends AppCompatActivity {
         Button restart = (Button)findViewById(R.id.restartBtn);
         TextView myUsernameButton = findViewById(R.id.myUser);
         TextView myScoreButton = findViewById(R.id.myScore);
+        TextView myTitleText = findViewById(R.id.titleText);
 
         ArrayList<String> topPlayers = this.getIntent().getExtras().getStringArrayList("topFive");
         String myName = this.getIntent().getExtras().getString("myName");
+        String myTitle = this.getIntent().getExtras().getString("myTitle");
         int myScore = this.getIntent().getExtras().getInt("myScore");
 
+        myTitleText.setText(myTitle);
         myUsernameButton.setText(myName);
+        if (myTitle.contains("WIN")){
+            myTitleText.setTextColor(Color.GREEN);
+        }else{
+            myTitleText.setTextColor(Color.RED);
+        }
         myScoreButton.setText(String.valueOf(myScore));
 
         ArrayList<Player> playerList = new ArrayList<>();

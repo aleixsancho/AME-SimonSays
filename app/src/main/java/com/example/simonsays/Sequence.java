@@ -251,6 +251,7 @@ public class Sequence extends AppCompatActivity {
                 }
             }, time);
             if ((count+1) == colors.size()){
+                score = score + 1;
                 gameOver("YOU WIN!");
             }else{
                 if (count == score){
@@ -269,7 +270,7 @@ public class Sequence extends AppCompatActivity {
 
             }
         }else{
-            gameOver("gameOver");
+            gameOver("GAME OVER!");
         }
     }
 
@@ -294,6 +295,7 @@ public class Sequence extends AppCompatActivity {
             rankingString.add(o.toString());
         }
         intent.putStringArrayListExtra("topFive", rankingString);
+        intent.putExtra("myTitle", newTitle);
         intent.putExtra("myName", playerName);
         intent.putExtra("myScore", score);
         startActivity(intent);
