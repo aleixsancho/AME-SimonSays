@@ -1,14 +1,25 @@
 package com.example.simonsays;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.ParcelUuid;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
+
 import org.jetbrains.annotations.Nullable;
 
 public class Sequence extends AppCompatActivity {
@@ -25,12 +36,19 @@ public class Sequence extends AppCompatActivity {
     private String[] numberColor;
     private int time = 1000;
     private String playerName;
+    private OutputStream outputStream;
+    private InputStream inStream;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sequence);
 
+        try{
+            initBluetooth();
+        }catch (Exception e){
+
+        }
         //Fetch buttons and text areas.
         title = findViewById(R.id.titleText);
         scoreText = findViewById(R.id.scoreText);
@@ -121,5 +139,38 @@ public class Sequence extends AppCompatActivity {
         }else{
             currentBtn.setBackgroundColor(Color.parseColor(originalColor[idColor.get(color)]));
         }
+        try{
+            write(String.valueOf(idColor.get(color)));
+        }catch (Exception e){
+
+        }
     }
+
+    public void initBluetooth() throws IOException {
+        BluetoothAdapter blueAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (blueAdapter != null) {
+            if (blueAdapter.isEnabled()) {
+                Set<BluetoothDevice> bondedDevices = blueAdapter.getBondedDevices();
+
+                if (bondedDevices.size() > 0) {
+                    Object[] devices = (Object[]) bondedDevices.toArray();
+                    BluetoothDevice device = (BluetoothDevice) devices[0]; //posició bluetooth mobil.
+                    ParcelUuid[] uuids = device.getUuids();
+                    BluetoothSocket socket = device.createRfcommSocketToServiceRecord(uuids[0].getUuid());
+                    socket.connect();
+                    outputStream = socket.getOutputStream();
+                    inStream = socket.getInputStream();
+                }
+
+                Log.e("error", "No appropriate paired devices.");
+            } else {
+                Log.e("error", "Bluetooth is disabled.");
+            }
+        }
+    }
+
+    public void write(String s) throws IOException {
+        outputStream.write(s.getBytes());
+    }
+
 }
