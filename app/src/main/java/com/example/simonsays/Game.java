@@ -1,6 +1,7 @@
 package com.example.simonsays;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
 import android.graphics.drawable.Drawable;
@@ -14,8 +15,14 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -38,6 +45,10 @@ public class Game extends AppCompatActivity {
     private Button currentBtn;
     private String[] originalColor;
     private String[] numberColor;
+    private SharedPreferences shared;
+    private SharedPreferences.Editor sharedEditor;
+    private static ArrayList<Player> topPlayers = new ArrayList<>();
+    private String playerName;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -59,14 +70,26 @@ public class Game extends AppCompatActivity {
         buttonColor = new Button[]{green, yellow, blue, red};
         originalColor = new String[]{"#00FF00","#FFFF00","#0000FF","#F44336"};
         numberColor = new String[]{"#B9FCB9", "#F0F0B1", "#B7B7F3", "#F0A49D"};
+        shared = getPreferences(MODE_PRIVATE);
+        sharedEditor = shared.edit();
 
         // Get count, index and color from intent
         score = this.getIntent().getIntExtra("score", -2);
         count = this.getIntent().getIntExtra("count", -3);
         colors = this.getIntent().getExtras().getStringArrayList("colors");
+        playerName = this.getIntent().getExtras().getString("username", "");
 
         // Update displayed score
         scoreText.setText(score.toString());
+
+        Gson gson = new Gson();
+        String rankJSON = shared.getString("username", "");
+        if (rankJSON.equals("")){
+            topPlayers = new ArrayList<Player>();
+        }else{
+            topPlayers = (ArrayList<Player>) gson.fromJson(rankJSON,  new TypeToken<ArrayList<Player>>() {
+            }.getType());
+        }
 
         // Update title text
         String temp;
@@ -95,21 +118,28 @@ public class Game extends AppCompatActivity {
                 onCorrect("Red");
             }
         });
-        restart.setOnClickListener(new View.OnClickListener(){
-            public void onClick(View v) {
-                Intent intent = new Intent(Game.this,  MainActivity.class);
-                startActivity(intent);
-            }
-        });
+
     }
 
     public void gameOver(String newTitle) {
-        colors.add(count, newTitle);
-        title.setText(newTitle);
-        restart.setVisibility(View.VISIBLE);
-        red.setText(newTitle);
-        yellow.setText(newTitle);
-        green.setText(newTitle);
+        Intent intent = new Intent(Game.this, Ranking.class);
+        topPlayers.add(new Player(playerName, score));
+        Collections.sort(topPlayers);
+
+        List<Player> fivePlayers = topPlayers.subList(0,5);
+
+        Gson gson = new Gson();
+        String info = gson.toJson(fivePlayers);
+        sharedEditor.putString("username", info);
+        sharedEditor.commit();
+        ArrayList<String> rankingString = new ArrayList<String>();
+        for (Player o : fivePlayers) {
+            rankingString.add(o.toString());
+        }
+        intent.putStringArrayListExtra("topFive", rankingString);
+        intent.putExtra("myName", playerName);
+        intent.putExtra("myScore", score);
+        startActivity(intent);
     }
 
     public void onCorrect(final String answer){
@@ -134,6 +164,7 @@ public class Game extends AppCompatActivity {
                     intent.putStringArrayListExtra("colors", colors);
                     intent.putExtra("count", count);
                     intent.putExtra("score", score);
+                    intent.putExtra("username", playerName);
                     startActivity(intent);
                 }else {
                     count = count + 1;
@@ -142,7 +173,7 @@ public class Game extends AppCompatActivity {
                 }
 
             }
-        }else if ((int)restart.getVisibility() != 0){
+        }else{
             gameOver("gameOver");
         }
     }

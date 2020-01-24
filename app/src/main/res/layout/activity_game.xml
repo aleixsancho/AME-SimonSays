@@ -81,17 +81,4 @@
         android:background="#F44336"
         android:textColor="#FFFFFF"/>
 
-    <Button
-        android:id="@+id/restartBtn"
-        android:text="Restart"
-        android:layout_width="330dp"
-        android:layout_height="80dp"
-        android:textSize="40sp"
-        android:layout_below="@id/yellowBtn"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp"
-        android:background="#6C0A7E"
-        android:textColor="#FFFFFF"
-        android:visibility="invisible"/>
-
 </RelativeLayout>

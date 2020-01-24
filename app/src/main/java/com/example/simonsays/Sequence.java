@@ -24,6 +24,7 @@ public class Sequence extends AppCompatActivity {
     private Button[] buttonColor;
     private String[] numberColor;
     private int time = 1000;
+    private String playerName;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -50,6 +51,7 @@ public class Sequence extends AppCompatActivity {
         score = this.getIntent().getIntExtra("score", -2);
         count = this.getIntent().getIntExtra("count", -3);
         colors = this.getIntent().getExtras().getStringArrayList("colors");
+        playerName = this.getIntent().getExtras().getString("username", "");
 
         scoreText.setText(score.toString());
         
@@ -79,6 +81,7 @@ public class Sequence extends AppCompatActivity {
                     intent.putStringArrayListExtra("colors", colors);
                     intent.putExtra("count", count);
                     intent.putExtra("score", score);
+                    intent.putExtra("username", playerName);
                     handler.postDelayed(new Runnable() {
                         @Override
                         public void run() {
@@ -94,6 +97,7 @@ public class Sequence extends AppCompatActivity {
                 intent.putStringArrayListExtra("colors", colors);
                 intent.putExtra("count", count);
                 intent.putExtra("score", score);
+                intent.putExtra("username", playerName);
                 handler.postDelayed(new Runnable(){
                     @Override
                     public void run(){
