@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">Simon Says</string>
+    <string name="waitString">\nLoading Game...\n\nPlease Wait.</string>
+    <string name="select_level">Select level:</string>
+    <string name="simon_says">Simon Says</string>
+    <string name="username">Username</string>
+    <string name="enter_username">Please enter your Username:</string>
+    <string name="start">Start</string>
+    <string name="todo">TODO</string>
+    <string name="player_name">-</string>
+    <string name="top_5_players">Top 5 Players</string>
+    <string name="your_score">Your score is:</string>
+    <string name="restart">Restart</string>
+    <string name="score">Score:\u0020</string>
+    <string name="score_number">0</string>
 </resources>

@@ -9,11 +9,14 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
+
 import java.util.ArrayList;
 import java.util.Random;
 import org.jetbrains.annotations.Nullable;
@@ -28,6 +31,7 @@ public final class MainActivity extends AppCompatActivity implements AdapterView
     private String[] users = {"Level1", "Level2", "Level3", "Level4", "Level5"};
     private String[] fourColors;
     private Random random;
+    private ConstraintLayout loading;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -39,11 +43,12 @@ public final class MainActivity extends AppCompatActivity implements AdapterView
         firstValue = random.nextInt(4);
         fourColors = new String[]{"Green", "Yellow", "Blue", "Red"};
         allColors.add(fourColors[firstValue]);
-        Button start = findViewById(R.id.startBtn);
-
+        final Button start = findViewById(R.id.startBtn);
         username = (EditText)findViewById(R.id.usernameInput);
-
         Spinner spin = (Spinner) findViewById(R.id.spinner1);
+        loading = findViewById(R.id.constrainLoading);
+
+        loading.setVisibility(View.INVISIBLE);
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, users);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spin.setAdapter(adapter);
@@ -53,6 +58,9 @@ public final class MainActivity extends AppCompatActivity implements AdapterView
             public void onClick(View v){
                 EditText currentName = findViewById(R.id.usernameInput);
                 if(!currentName.getText().toString().equals("")){
+                    start.setVisibility(View.INVISIBLE);
+                    loading.setVisibility(View.VISIBLE);
+                    loading.bringToFront();
                     //Colors Simon Says.
                     for (int i=0; i < level; i++){
                         randomValue = random.nextInt(4);
