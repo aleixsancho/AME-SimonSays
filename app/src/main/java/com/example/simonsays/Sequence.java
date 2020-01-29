@@ -14,12 +14,12 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -49,7 +49,6 @@ public class Sequence extends AppCompatActivity {
     private Button yellow;
     private Button red;
     private Button blue;
-    private InputStream inStream;
     private SharedPreferences shared;
     private SharedPreferences.Editor sharedEditor;
     private static ArrayList<Player> topPlayers = new ArrayList<>();
@@ -62,15 +61,17 @@ public class Sequence extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sequence);
 
-        try{
+        //Connect Bluetooth.
+        try {
             initBluetooth();
-        }catch (Exception e){
+        } catch (Exception e) {
 
         }
+
         //Fetch buttons and text areas.
         title = findViewById(R.id.titleText);
         scoreText = findViewById(R.id.scoreText);
-        originalColor = new String[]{"#00FF00","#FFFF00","#0000FF","#F44336"};
+        originalColor = new String[]{"#00FF00", "#FFFF00", "#0000FF", "#F44336"};
         green = findViewById(R.id.greenBtn);
         yellow = findViewById(R.id.yellowBtn);
         blue = findViewById(R.id.blueBtn);
@@ -91,48 +92,54 @@ public class Sequence extends AppCompatActivity {
         sharedEditor = shared.edit();
 
 
-        // Get count, index and color from intent
+        // Get count, index, player name and color from intent
         score = this.getIntent().getIntExtra("score", -2);
         count = this.getIntent().getIntExtra("count", -3);
         colors = this.getIntent().getExtras().getStringArrayList("colors");
         playerName = this.getIntent().getExtras().getString("username", "");
 
-
-        green.setOnClickListener(new View.OnClickListener(){
+        //If color button is clicked.
+        green.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 onCorrect("Green");
             }
         });
-        yellow.setOnClickListener(new View.OnClickListener(){
+        yellow.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 onCorrect("Yellow");
             }
         });
-        blue.setOnClickListener(new View.OnClickListener(){
+        blue.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 onCorrect("Blue");
             }
         });
-        red.setOnClickListener(new View.OnClickListener(){
+        red.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 onCorrect("Red");
             }
         });
 
+        //Before the game starts, disable all buttons to show the sequence.
         green.setEnabled(false);
         yellow.setEnabled(false);
         blue.setEnabled(false);
         red.setEnabled(false);
 
+        //The game starts.
         initGame();
     }
 
-    public void initGame(){
+    public void initGame() {
         scoreText.setText(score.toString());
         time = 1000;
-        for (final String c : colors){
+
+        //Get all the colors of the sequence.
+        for (final String c : colors) {
             time = time + 300;
-            if (count < score+1) {
+
+            //Show sequence or player starts to play.
+            if (count < score + 1) {
                 handler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -149,7 +156,7 @@ public class Sequence extends AppCompatActivity {
                     }
                 }, time);
                 time = time + 300;
-                if (count+1 == colors.size()) {
+                if (count + 1 == colors.size()) {
                     handler.postDelayed(new Runnable() {
                         @Override
                         public void run() {
@@ -158,10 +165,10 @@ public class Sequence extends AppCompatActivity {
                     }, time);
                     time = 0;
                 }
-            }else{
-                handler.postDelayed(new Runnable(){
+            } else {
+                handler.postDelayed(new Runnable() {
                     @Override
-                    public void run(){
+                    public void run() {
                         // do something
                         playGame();
                     }
@@ -172,47 +179,55 @@ public class Sequence extends AppCompatActivity {
         }
     }
 
-    public void changeColor (final String color, Boolean change, Boolean sequencia){
-        if (sequencia) {
+    /**
+     * Method where the button color changes to show a turn on effect.
+     *
+     * @param color    String which contains the name of the Button.
+     * @param change   Boolean, 0 if colors will be light, 1 if will be the original color.
+     * @param sequence Boolean, 0 if the change is for a sequence, 1 if the change is when player clicks any button.
+     */
+    public void changeColor(final String color, Boolean change, Boolean sequence) {
+        if (sequence) {
             String temp = "Simon says " + color;
             title.setText(temp);
             scoreText.setText(score.toString());
         }
-        if (sequencia && change){
+        if (sequence && change) {
             mediaPlayer = MediaPlayer.create(this, audioColor.get(color));
             mediaPlayer.start();
         }
         currentBtn = buttonColor[idColor.get(color)];
-        if(change) {
+        if (change) {
             currentBtn.setBackgroundColor(Color.parseColor(numberColor[idColor.get(color)]));
-        }else{
+        } else {
             currentBtn.setBackgroundColor(Color.parseColor(originalColor[idColor.get(color)]));
         }
-        try{
+
+        //Send string via Bluetooth.
+        try {
             write(String.valueOf(idColor.get(color)));
-        }catch (Exception e){
+        } catch (Exception e) {
 
         }
     }
 
-    /*public void changeColor (final String color, Boolean change){
-        currentBtn = buttonColor[idColor.get(color)];
-        if(change) {
-            currentBtn.setBackgroundColor(Color.parseColor(numberColor[idColor.get(color)]));
-        }else{
-            currentBtn.setBackgroundColor(Color.parseColor(originalColor[idColor.get(color)]));
-        }
-    }*/
-
+    /**
+     * Configure all the Bluetooth.
+     *
+     * @throws IOException
+     */
     public void initBluetooth() throws IOException {
         BluetoothAdapter blueAdapter = BluetoothAdapter.getDefaultAdapter();
+        InputStream inStream;
         if (blueAdapter != null) {
             if (blueAdapter.isEnabled()) {
                 Set<BluetoothDevice> bondedDevices = blueAdapter.getBondedDevices();
 
                 if (bondedDevices.size() > 0) {
                     Object[] devices = (Object[]) bondedDevices.toArray();
-                    BluetoothDevice device = (BluetoothDevice) devices[0]; //posició bluetooth mobil.
+
+                    //Bluetooth mobile position.
+                    BluetoothDevice device = (BluetoothDevice) devices[0];
                     ParcelUuid[] uuids = device.getUuids();
                     BluetoothSocket socket = device.createRfcommSocketToServiceRecord(uuids[0].getUuid());
                     socket.connect();
@@ -227,11 +242,20 @@ public class Sequence extends AppCompatActivity {
         }
     }
 
+    /**
+     * Send info via Bluetooth.
+     *
+     * @param s String which contains the information.
+     * @throws IOException
+     */
     public void write(String s) throws IOException {
         outputStream.write(s.getBytes());
     }
 
-    public void playGame(){
+    /**
+     * Main method which enable all button to allows player play the game.
+     */
+    public void playGame() {
         green.setEnabled(true);
         yellow.setEnabled(true);
         blue.setEnabled(true);
@@ -240,21 +264,28 @@ public class Sequence extends AppCompatActivity {
         count = 0;
         Gson gson = new Gson();
         String rankJSON = shared.getString("username", "");
-        if (rankJSON.equals("")){
+        if (rankJSON.equals("")) {
             topPlayers = new ArrayList<Player>();
-        }else{
-            topPlayers = (ArrayList<Player>) gson.fromJson(rankJSON,  new TypeToken<ArrayList<Player>>() {
+        } else {
+            topPlayers = (ArrayList<Player>) gson.fromJson(rankJSON, new TypeToken<ArrayList<Player>>() {
             }.getType());
         }
         String temp;
-        if (score+1 > count) {
+        if (score + 1 > count) {
             temp = "Color: " + (count + 1);
             title.setText(temp);
         }
     }
 
-    public void onCorrect(final String answer){
-        if (colors.get(count).equals(answer)){
+    /**
+     * This method runs when any button color is clicked.
+     *
+     * @param answer String with the name of the button is pressed.
+     */
+    public void onCorrect(final String answer) {
+
+        //Check if the color is clicked correctly.
+        if (colors.get(count).equals(answer)) {
             mediaPlayer = MediaPlayer.create(this, audioColor.get(answer));
             mediaPlayer.start();
             changeColor(answer, Boolean.TRUE, Boolean.FALSE);
@@ -266,13 +297,15 @@ public class Sequence extends AppCompatActivity {
                     changeColor(answer, Boolean.FALSE, Boolean.FALSE);
                 }
             }, time);
-            if ((count+1) == colors.size()){
+
+            //Check if the player wins.
+            if ((count + 1) == colors.size()) {
                 mediaPlayer = MediaPlayer.create(this, audioColor.get("Win"));
                 mediaPlayer.start();
                 score = score + 1;
                 gameOver("YOU WIN!");
-            }else{
-                if (count == score){
+            } else {
+                if (count == score) {
                     count = 0;
                     score = score + 1;
                     green.setEnabled(false);
@@ -280,20 +313,27 @@ public class Sequence extends AppCompatActivity {
                     blue.setEnabled(false);
                     red.setEnabled(false);
                     initGame();
-                }else {
+                } else {
                     count = count + 1;
                     String temp = "Color: " + (count + 1);
                     title.setText(temp);
                 }
 
             }
-        }else{
+
+            //The player games over.
+        } else {
             mediaPlayer = MediaPlayer.create(this, audioColor.get("Fail"));
             mediaPlayer.start();
             gameOver("GAME OVER!");
         }
     }
 
+    /**
+     * Method that starts ranking activity.
+     *
+     * @param newTitle String which contains if the player won or loose.
+     */
     public void gameOver(String newTitle) {
         Intent intent = new Intent(Sequence.this, Ranking.class);
         topPlayers.add(new Player(playerName, score));
@@ -302,7 +342,7 @@ public class Sequence extends AppCompatActivity {
 
         try {
             fivePlayers = topPlayers.subList(0, 5);
-        }catch(Exception e){
+        } catch (Exception e) {
             fivePlayers = topPlayers;
         }
 
@@ -320,7 +360,6 @@ public class Sequence extends AppCompatActivity {
         intent.putExtra("myScore", score);
         startActivity(intent);
     }
-
 
 
 }
